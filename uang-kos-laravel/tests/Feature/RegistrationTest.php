@@ -57,6 +57,12 @@ class RegistrationTest extends TestCase
     {
         $this->get(route('register'))
             ->assertOk()
+            ->assertSee('signup-screen-root', false)
+            ->assertSee('class="money-sky"', false)
+            ->assertSee('Create your account.')
+            ->assertSee('Sign Up')
+            ->assertSee('Sign In')
+            ->assertSee('background: radial-gradient(circle at 50% 20%', false)
             ->assertSee('Format email sesuai.', false)
             ->assertSee('Mengandung 8 karakter atau lebih')
             ->assertSee('Mengandung huruf kapital (A-Z)')

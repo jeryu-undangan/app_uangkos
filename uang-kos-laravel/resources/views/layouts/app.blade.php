@@ -538,9 +538,637 @@
         body.dark-mode .bottom-nav-ripple { background: rgba(115,175,255,.22); }
         @media (prefers-reduced-motion: reduce) { .bottom-nav a, .bottom-nav svg { transition-duration: .01ms; } .bottom-nav a.active { animation: none; } .bottom-nav-ripple { display: none; } }
         body.dark-mode .menu-panel .menu-logout { border-color: #475569; }
+
+        /* ==========================================================================
+           Cartoon Walking -> Crash -> Brand Reveal -> Wobble-Grow-Fade Dissolve
+           Revisi:
+           1. Durasi lebih rileks & nyaman dinikmati
+           2. Posisi benturan presisi (logo menimpa langsung di atas karakter)
+           3. Saat membesar: goyang-goyang (wobble) & transparansi memudar (fade out)
+           ========================================================================== */
+        /* Once per session rule: hide instantly if already shown */
+        html.splash-already-shown #appSplashScreen {
+            display: none !important;
+        }
+        #appSplashScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 40%, #151d2d 0%, #07090f 90%) !important;
+            color: #ffffff;
+            user-select: none;
+            transition: opacity 0.5s ease-out, visibility 0.5s;
+        }
+
+        #appSplashScreen.splash-done {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        /* Screen Shake effect on Impact */
+        .splash-stage-root {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .splash-stage-root.shaking {
+            animation: cartoonScreenShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+        }
+
+        @keyframes cartoonScreenShake {
+            10%, 90% { transform: translate3d(-5px, 4px, 0); }
+            20%, 80% { transform: translate3d(6px, -5px, 0); }
+            30%, 50%, 70% { transform: translate3d(-7px, 6px, 0); }
+            40%, 60% { transform: translate3d(6px, -4px, 0); }
+        }
+
+        /* ── Unified Stage: Karakter & Logo Berbagi Titik Pusat yang Sama ── */
+        .unified-stage {
+            position: relative;
+            width: 320px;
+            height: 480px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Ground & Shadows (Tepat di bawah kaki karakter) */
+        .ground-area {
+            position: absolute;
+            top: 265px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 220px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .char-ground-shadow {
+            position: absolute;
+            width: 84px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.55);
+            filter: blur(4px);
+            animation: charShadowPulse 0.55s infinite alternate ease-in-out;
+            transition: opacity 0.3s;
+        }
+        @keyframes charShadowPulse {
+            0% { transform: scale(1); opacity: 0.55; }
+            100% { transform: scale(0.85); opacity: 0.35; }
+        }
+
+        .falling-logo-shadow {
+            position: absolute;
+            width: 115px;
+            height: 24px;
+            border-radius: 50%;
+            background: radial-gradient(ellipse, rgba(0, 0, 0, 0.85) 0%, transparent 70%);
+            opacity: 0;
+            transform: scale(0.2);
+            transition: opacity 0.2s, transform 0.2s;
+        }
+        .falling-logo-shadow.growing {
+            animation: logoShadowGrow 0.35s cubic-bezier(0.12, 0, 0.39, 0) forwards;
+        }
+        @keyframes logoShadowGrow {
+            0% { opacity: 0; transform: scale(0.2); }
+            100% { opacity: 0.95; transform: scale(1.25); }
+        }
+
+        /* Shockwave on Impact */
+        .impact-shockwave {
+            position: absolute;
+            width: 140px;
+            height: 32px;
+            border-radius: 50%;
+            border: 3.5px solid #38bdf8;
+            box-shadow: 0 0 18px #38bdf8;
+            opacity: 0;
+            pointer-events: none;
+        }
+        .impact-shockwave.active {
+            animation: shockwaveExpand 0.55s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+        @keyframes shockwaveExpand {
+            0% { transform: scale(0.2); opacity: 1; border-width: 4px; }
+            100% { transform: scale(2.8); opacity: 0; border-width: 1px; }
+        }
+
+        /* Screen Flash */
+        .impact-screen-flash {
+            position: fixed;
+            inset: 0;
+            background: #ffffff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .impact-screen-flash.flash-now {
+            animation: flashPop 0.32s ease-out forwards;
+        }
+        @keyframes flashPop {
+            0% { opacity: 0.65; }
+            100% { opacity: 0; }
+        }
+
+        /* Comic Debris & Dizzy Stars */
+        .impact-stars-wrap {
+            position: absolute;
+            top: 155px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 160px;
+            height: 80px;
+            pointer-events: none;
+            opacity: 0;
+            z-index: 8;
+        }
+        .impact-stars-wrap.active {
+            opacity: 1;
+        }
+        .comic-star {
+            position: absolute;
+            font-size: 18px;
+            font-weight: 900;
+            color: #fbbf24;
+            text-shadow: 0 0 10px #f59e0b;
+        }
+        .impact-stars-wrap.active .star-1 { animation: starFly1 0.75s ease-out forwards; }
+        .impact-stars-wrap.active .star-2 { animation: starFly2 0.75s ease-out forwards; }
+        .impact-stars-wrap.active .star-3 { animation: starFly3 0.75s ease-out forwards; }
+        .impact-stars-wrap.active .star-4 { animation: starFly4 0.75s ease-out forwards; }
+        .impact-stars-wrap.active .star-5 { animation: starFly5 0.75s ease-out forwards; }
+
+        @keyframes starFly1 { 0% { transform: scale(0) translate(0, 0); opacity: 0; } 40% { opacity: 1; } 100% { transform: scale(1.2) translate(-35px, -30px) rotate(-90deg); opacity: 0; } }
+        @keyframes starFly2 { 0% { transform: scale(0) translate(0, 0); opacity: 0; } 40% { opacity: 1; } 100% { transform: scale(1.3) translate(0px, -45px) rotate(120deg); opacity: 0; } }
+        @keyframes starFly3 { 0% { transform: scale(0) translate(0, 0); opacity: 0; } 40% { opacity: 1; } 100% { transform: scale(1.2) translate(35px, -30px) rotate(90deg); opacity: 0; } }
+        @keyframes starFly4 { 0% { transform: scale(0) translate(0, 0); opacity: 0; } 40% { opacity: 1; } 100% { transform: scale(1) translate(-45px, 0px) rotate(-60deg); opacity: 0; } }
+        @keyframes starFly5 { 0% { transform: scale(0) translate(0, 0); opacity: 0; } 40% { opacity: 1; } 100% { transform: scale(1) translate(45px, 0px) rotate(60deg); opacity: 0; } }
+
+        /* Floating Thought Particles saat membaca */
+        .thought-particles-area {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 170px;
+            height: 120px;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .thought-particle {
+            position: absolute;
+            font-size: 14px;
+            font-weight: 800;
+            color: #38bdf8;
+            opacity: 0;
+            text-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+            animation: thoughtDrift 2.2s infinite ease-out;
+        }
+        .tp-1 { left: 20%; font-size: 16px; color: #facc15; animation-delay: 0.1s; }
+        .tp-2 { left: 45%; font-size: 13px; color: #34d399; animation-delay: 0.6s; }
+        .tp-3 { left: 68%; font-size: 15px; color: #a78bfa; animation-delay: 1.1s; }
+        .tp-4 { left: 35%; font-size: 14px; color: #fb7185; animation-delay: 1.6s; }
+
+        @keyframes thoughtDrift {
+            0% { transform: translateY(100px) scale(0.6); opacity: 0; }
+            20% { opacity: 0.9; }
+            70% { opacity: 0.9; }
+            100% { transform: translateY(10px) scale(1.15) rotate(15deg); opacity: 0; }
+        }
+
+        /* ── Karakter Kartun Berjalan (Posisinya sejajar tepat di bawah logo) ── */
+        .cartoon-character-wrap {
+            position: absolute;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 135px;
+            height: 175px;
+            transform-origin: bottom center;
+            z-index: 3;
+            transition: transform 0.1s cubic-bezier(0.1, 0.9, 0.2, 1), opacity 0.45s ease-out;
+        }
+        .cartoon-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+            overflow: visible;
+        }
+
+        /* Walking Animation Loop */
+        .cartoon-character-wrap.walking {
+            animation: charBodyWalk 0.55s infinite alternate ease-in-out;
+        }
+        @keyframes charBodyWalk {
+            0% { transform: translateX(-50%) translateY(0px) rotate(0deg); }
+            50% { transform: translateX(-50%) translateY(-7px) rotate(1.5deg); }
+            100% { transform: translateX(-50%) translateY(0px) rotate(-1.5deg); }
+        }
+        .cartoon-character-wrap.walking .leg-left {
+            transform-origin: 58px 110px;
+            animation: walkLegL 0.55s infinite alternate ease-in-out;
+        }
+        .cartoon-character-wrap.walking .leg-right {
+            transform-origin: 82px 110px;
+            animation: walkLegR 0.55s infinite alternate ease-in-out;
+        }
+        @keyframes walkLegL { 0% { transform: rotate(-22deg); } 100% { transform: rotate(20deg); } }
+        @keyframes walkLegR { 0% { transform: rotate(20deg); } 100% { transform: rotate(-22deg); } }
+
+        .cartoon-character-wrap.walking .arms-book-group {
+            transform-origin: 70px 80px;
+            animation: bookBob 0.55s infinite alternate ease-in-out;
+        }
+        @keyframes bookBob {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-3px) rotate(-1deg); }
+        }
+
+        /* Dust Puffs */
+        .foot-dust {
+            position: absolute;
+            bottom: 8px;
+            width: 10px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            pointer-events: none;
+        }
+        .foot-dust.left { left: 34px; animation: dustPuffL 0.55s infinite ease-out; }
+        .foot-dust.right { right: 34px; animation: dustPuffR 0.55s infinite ease-out 0.27s; }
+        @keyframes dustPuffL {
+            0% { transform: scale(0.5) translate(0, 0); opacity: 0; }
+            40% { opacity: 0.7; }
+            100% { transform: scale(1.6) translate(-8px, -4px); opacity: 0; }
+        }
+        @keyframes dustPuffR {
+            0% { transform: scale(0.5) translate(0, 0); opacity: 0; }
+            40% { opacity: 0.7; }
+            100% { transform: scale(1.6) translate(8px, -4px); opacity: 0; }
+        }
+
+        /* Alert Exclamation Bubble */
+        .char-alert-bubble {
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            width: 32px;
+            height: 32px;
+            background: #ef4444;
+            border: 2.5px solid #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 20px;
+            font-weight: 900;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
+            opacity: 0;
+            z-index: 5;
+            transition: transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s;
+        }
+        .char-alert-bubble.active {
+            opacity: 1;
+            transform: translateX(-50%) scale(1.15);
+        }
+
+        /* SQUASHED STATE (Gepeng tepat di bawah logo!) */
+        .cartoon-character-wrap.squashed {
+            animation: none !important;
+            /* Gepeng rata di bawah logo */
+            transform: translateX(-50%) translateY(92px) scaleX(1.75) scaleY(0.12) !important;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
+            transition: transform 0.08s cubic-bezier(0.1, 0.9, 0.2, 1);
+        }
+        .cartoon-character-wrap.squashed .foot-dust,
+        .cartoon-character-wrap.squashed .char-alert-bubble {
+            display: none !important;
+        }
+        .cartoon-character-wrap.dissolve {
+            opacity: 0 !important;
+            transition: opacity 0.45s ease-out;
+        }
+
+        /* ── HERO LOGO (Jatuh tepat menimpa karakter di top: 125px) ── */
+        .hero-logo-box {
+            position: absolute;
+            top: 125px;
+            left: 50%;
+            width: 104px;
+            height: 104px;
+            border-radius: 28px;
+            background: #ffffff;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), 0 0 24px rgba(56, 189, 248, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-origin: center center;
+            z-index: 6;
+            will-change: transform, opacity;
+            /* Awalnya di atas layar */
+            transform: translateX(-50%) translateY(-700px);
+            opacity: 0;
+            transition: none;
+        }
+        .hero-logo-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 26px;
+            display: block;
+        }
+
+        .logo-speed-trails {
+            position: absolute;
+            top: -70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(to top, rgba(56, 189, 248, 0.8), transparent);
+            filter: blur(4px);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Aksi 1: Meluncur Jatuh */
+        .hero-logo-box.dropping {
+            opacity: 1;
+            /* Mendarat tepat menimpa karakter */
+            transform: translateX(-50%) translateY(0);
+            transition: transform 0.32s cubic-bezier(0.55, 0.055, 0.675, 0.19);
+        }
+        .hero-logo-box.dropping .logo-speed-trails {
+            opacity: 1;
+        }
+
+        /* Aksi 2: Membal Benturan (Impact Bounce) */
+        .hero-logo-box.impacted {
+            opacity: 1;
+            animation: heroLogoImpactBounce 0.5s ease-out forwards;
+        }
+        @keyframes heroLogoImpactBounce {
+            0% { transform: translateX(-50%) translateY(0) scale(1.4, 0.65); }
+            35% { transform: translateX(-50%) translateY(-22px) scale(0.85, 1.25); }
+            60% { transform: translateX(-50%) translateY(0) scale(1.1, 0.95); }
+            80% { transform: translateX(-50%) translateY(-4px) scale(0.98, 1.02); }
+            100% { transform: translateX(-50%) translateY(0) scale(1, 1); }
+        }
+
+        /* ── TAMPILAN BRANDING (SESUAI FOTO 1) ── */
+        .hero-text-block {
+            position: absolute;
+            top: 248px;
+            left: 50%;
+            transform: translateX(-50%) translateY(14px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 300px;
+            opacity: 0;
+            transition: opacity 0.45s ease-out, transform 0.45s ease-out;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .hero-text-block.show-photo1 {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        .hero-text-block.hide-photo1 {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+        }
+
+        .hero-brand-title {
+            margin: 0;
+            font-size: 2.2rem;
+            font-weight: 800;
+            font-style: italic;
+            letter-spacing: -0.025em;
+            line-height: 1.1;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+        }
+        .title-white {
+            color: #ffffff;
+            font-style: italic;
+        }
+        .title-blue {
+            color: #38bdf8;
+            font-style: italic;
+            text-shadow: 0 0 16px rgba(56, 189, 248, 0.5);
+        }
+
+        .hero-blue-accent {
+            width: 38px;
+            height: 3.5px;
+            border-radius: 999px;
+            background: #38bdf8;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.8), 0 0 20px rgba(56, 189, 248, 0.4);
+            margin: 10px auto 14px;
+        }
+
+        .hero-tagline {
+            margin: 0;
+            font-size: 0.94rem;
+            font-weight: 500;
+            color: #94a3b8;
+            letter-spacing: -0.01em;
+            text-align: center;
+        }
+
+        /* ── REVISI: LOGO MEMBESAR SAMBIL GOYANG-GOYANG & TRANSPARANSI MEMUDAR ── */
+        .hero-logo-box.wobble-grow-fade {
+            animation: logoWobbleGrowFade 1.1s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards !important;
+        }
+
+        @keyframes logoWobbleGrowFade {
+            0% {
+                transform: translateX(-50%) translateY(0) scale(1) rotate(0deg);
+                opacity: 1;
+                filter: drop-shadow(0 16px 40px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 20px rgba(56, 189, 248, 0.4));
+            }
+            18% {
+                transform: translateX(-50%) translateY(-4px) scale(1.22) rotate(-6deg);
+                opacity: 0.95;
+                filter: drop-shadow(0 20px 45px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 25px rgba(56, 189, 248, 0.55));
+            }
+            38% {
+                transform: translateX(-50%) translateY(-2px) scale(1.55) rotate(6deg);
+                opacity: 0.85;
+                filter: drop-shadow(0 24px 50px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 30px rgba(56, 189, 248, 0.6));
+            }
+            58% {
+                transform: translateX(-50%) translateY(0) scale(1.95) rotate(-5deg);
+                opacity: 0.65;
+            }
+            78% {
+                transform: translateX(-50%) translateY(0) scale(2.4) rotate(3deg);
+                opacity: 0.35;
+            }
+            100% {
+                transform: translateX(-50%) translateY(0) scale(2.85) rotate(0deg);
+                opacity: 0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            #appSplashScreen { transition-duration: 0.15s !important; }
+            .cartoon-character-wrap, .hero-logo-box { animation: none !important; transition: none !important; }
+        }
     </style>
+    @stack('styles')
+    <script nonce="{{ request()->attributes->get('cspNonce') }}">
+        try {
+            if (sessionStorage.getItem('uangkos_splash_shown')) {
+                document.documentElement.classList.add('splash-already-shown');
+            }
+        } catch (e) {}
+    </script>
 </head>
 <body @auth class="{{ implode(' ', array_filter([auth()->user()->dark_mode ? 'dark-mode' : null, auth()->user()->application_mode === 'salary' ? 'salary-mode' : (auth()->user()->application_mode === 'kos' ? 'kos-mode' : null), request()->routeIs('application-mode.choose') ? 'mode-selection' : null])) }}" @endauth>
+    <!-- ── Cartoon Walk, Crash & Wobbly Dissolve Splash Screen ── -->
+    <div id="appSplashScreen" aria-hidden="true">
+        <div class="impact-screen-flash" id="splashFlash"></div>
+
+        <div class="splash-stage-root" id="splashStageRoot">
+            <div class="unified-stage">
+                <!-- Partikel efek saat berjalan membaca buku -->
+                <div class="thought-particles-area" id="thoughtParticles">
+                    <span class="thought-particle tp-1">Rp</span>
+                    <span class="thought-particle tp-2">♫</span>
+                    <span class="thought-particle tp-3">10k</span>
+                    <span class="thought-particle tp-4">✦</span>
+                </div>
+
+                <!-- Area Tanah & Bayangan (Sejajar tepat di bawah kaki karakter) -->
+                <div class="ground-area">
+                    <div class="char-ground-shadow" id="charShadow"></div>
+                    <div class="falling-logo-shadow" id="fallingLogoShadow"></div>
+                    <div class="impact-shockwave" id="splashShockwave"></div>
+                </div>
+
+                <!-- Bintang & Koin Berputar Efek Impact -->
+                <div class="impact-stars-wrap" id="splashStars">
+                    <span class="comic-star star-1">★</span>
+                    <span class="comic-star star-2">Rp</span>
+                    <span class="comic-star star-3">★</span>
+                    <span class="comic-star star-4">✦</span>
+                    <span class="comic-star star-5">Rp</span>
+                </div>
+
+                <!-- Orang Kartun Berjalan Membawa/Membaca Buku -->
+                <div class="cartoon-character-wrap walking" id="cartoonChar">
+                    <div class="char-alert-bubble" id="charAlert">!</div>
+
+                    <svg class="cartoon-svg" viewBox="0 0 140 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="38" y="65" width="18" height="34" rx="8" fill="#1e293b" />
+                        <rect x="42" y="70" width="10" height="20" rx="4" fill="#334155" />
+
+                        <!-- Kaki Kiri -->
+                        <g class="leg-group leg-left">
+                            <path d="M58 110 L54 145" stroke="#1e293b" stroke-width="12" stroke-linecap="round"/>
+                            <ellipse cx="50" cy="152" rx="13" ry="6" fill="#f8fafc" stroke="#0f172a" stroke-width="2"/>
+                            <path d="M42 153 L58 153" stroke="#ef4444" stroke-width="2"/>
+                        </g>
+
+                        <!-- Torso Hoodie -->
+                        <g class="torso-group">
+                            <path d="M48 68 C48 62 92 62 92 68 L88 116 C88 120 52 120 52 116 Z" fill="#0284c7" />
+                            <path d="M56 94 C56 90 84 90 84 94 L81 110 L59 110 Z" fill="#0369a1" />
+                            <path d="M66 68 L66 82 M74 68 L74 82" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+                        </g>
+
+                        <!-- Kaki Kanan -->
+                        <g class="leg-group leg-right">
+                            <path d="M82 110 L86 145" stroke="#334155" stroke-width="12" stroke-linecap="round"/>
+                            <ellipse cx="92" cy="152" rx="13" ry="6" fill="#f8fafc" stroke="#0f172a" stroke-width="2"/>
+                            <path d="M84 153 L100 153" stroke="#3b82f6" stroke-width="2"/>
+                        </g>
+
+                        <!-- Tangan Membawa Buku Terbuka -->
+                        <g class="arms-book-group">
+                            <path d="M50 72 C42 85 45 98 56 100" stroke="#0284c7" stroke-width="9" stroke-linecap="round" fill="none"/>
+                            <g class="the-book">
+                                <path d="M52 82 L70 94 L88 82 L90 106 L70 118 L50 106 Z" fill="#d97706" />
+                                <path d="M54 84 L70 95 L70 116 L52 105 Z" fill="#fef9c3" />
+                                <path d="M70 95 L86 84 L88 105 L70 116 Z" fill="#ffffff" />
+                                <path d="M56 88 L67 96 M56 93 L67 101 M56 98 L67 106" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+                                <path d="M73 96 L84 88 M73 101 L84 93 M73 106 L84 98" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round"/>
+                                <path d="M70 95 L70 124 L66 120 L62 124 L62 112" fill="#ef4444" />
+                                <text x="70" y="88" text-anchor="middle" font-size="7" font-weight="900" fill="#78350f" font-family="'Inter', sans-serif">Rp</text>
+                            </g>
+                            <path d="M90 72 C98 85 95 98 84 100" stroke="#0284c7" stroke-width="9" stroke-linecap="round" fill="none"/>
+                            <circle cx="52" cy="100" r="5" fill="#fed7aa"/>
+                            <circle cx="88" cy="100" r="5" fill="#fed7aa"/>
+                        </g>
+
+                        <!-- Kepala & Wajah -->
+                        <g class="head-group">
+                            <rect x="66" y="55" width="8" height="12" rx="3" fill="#fdba74"/>
+                            <circle cx="70" cy="42" r="22" fill="#fed7aa"/>
+                            <circle cx="56" cy="47" r="4" fill="#fca5a5" opacity="0.6"/>
+                            <circle cx="84" cy="47" r="4" fill="#fca5a5" opacity="0.6"/>
+                            <ellipse cx="61" cy="40" rx="3.5" ry="5" fill="#ffffff"/>
+                            <ellipse cx="79" cy="40" rx="3.5" ry="5" fill="#ffffff"/>
+                            <ellipse cx="62" cy="42" rx="2.2" ry="3.2" fill="#0f172a"/>
+                            <ellipse cx="80" cy="42" rx="2.2" ry="3.2" fill="#0f172a"/>
+                            <circle cx="61" cy="41" r="0.9" fill="#ffffff"/>
+                            <circle cx="79" cy="41" r="0.9" fill="#ffffff"/>
+                            <path d="M57 33 Q62 31 66 33" stroke="#475569" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                            <path d="M74 33 Q78 31 83 33" stroke="#475569" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                            <circle cx="70" cy="44" r="1.5" fill="#f97316"/>
+                            <path d="M67 48 Q70 52 73 48" stroke="#0f172a" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                            <path d="M48 40 C46 25 58 18 70 18 C82 18 94 25 92 40 C91 32 87 26 80 25 C75 24 71 28 66 26 C60 24 53 28 48 40 Z" fill="#1e293b"/>
+                            <path d="M52 28 C56 22 62 21 68 22" stroke="#334155" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                            <path d="M70 18 Q76 13 82 15" stroke="#1e293b" stroke-width="3" stroke-linecap="round" fill="none"/>
+                        </g>
+                    </svg>
+
+                    <span class="foot-dust left"></span>
+                    <span class="foot-dust right"></span>
+                </div>
+
+                <!-- Logo Hero (Jatuh tepat menimpa karakter) -->
+                <div class="hero-logo-box" id="heroLogoBox">
+                    <div class="logo-speed-trails"></div>
+                    <img src="{{ asset('app-logo.png') }}" alt="Logo UangKos">
+                </div>
+
+                <!-- Teks Branding (Sesuai Foto 1: UangKos + Tagline) -->
+                <div class="hero-text-block" id="heroTextBlock">
+                    <h1 class="hero-brand-title">
+                        <span class="title-white">Uang</span><span class="title-blue">Kos</span>
+                    </h1>
+                    <div class="hero-blue-accent"></div>
+                    <p class="hero-tagline">Atur uang kos & keuanganmu dengan mudah.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @auth
         <header class="topbar">
             <div class="topbar-leading">
@@ -683,5 +1311,103 @@
             });
         });
     </script>
+    <script nonce="{{ request()->attributes->get('cspNonce') }}">
+        (function() {
+            var splash = document.getElementById('appSplashScreen');
+            if (!splash) return;
+
+            // Check if splash has already been shown in this session (Hanya 1x saat aplikasi dibuka)
+            try {
+                if (sessionStorage.getItem('uangkos_splash_shown')) {
+                    splash.remove();
+                    return;
+                }
+                sessionStorage.setItem('uangkos_splash_shown', '1');
+            } catch (e) {}
+
+            var stageRoot = document.getElementById('splashStageRoot');
+            var cartoon = document.getElementById('cartoonChar');
+            var alertBubble = document.getElementById('charAlert');
+            var thoughtParticles = document.getElementById('thoughtParticles');
+            var charShadow = document.getElementById('charShadow');
+            var fallingLogoShadow = document.getElementById('fallingLogoShadow');
+            var shockwave = document.getElementById('splashShockwave');
+            var stars = document.getElementById('splashStars');
+            var flash = document.getElementById('splashFlash');
+
+            var heroLogo = document.getElementById('heroLogoBox');
+            var heroText = document.getElementById('heroTextBlock');
+
+            // ── REVISED SEQUENCE & COMFORTABLE TIMING ──
+            // 0.0s - 2.8s: Karakter kartun berjalan santai membaca buku (durasi jelas & nyaman dinikmati)
+
+            // 2.8s: Tanda seru kaget '!' muncul & bayangan logo di tanah membesar
+            setTimeout(function() {
+                if (alertBubble) alertBubble.classList.add('active');
+                if (fallingLogoShadow) fallingLogoShadow.classList.add('growing');
+            }, 2800);
+
+            // 3.1s: Logo meluncur jatuh dari atas
+            setTimeout(function() {
+                if (heroLogo) heroLogo.classList.add('dropping');
+            }, 3100);
+
+            // 3.35s: IMPACT / GEDEBUK! Logo menimpa karakter tepat di bawahnya
+            setTimeout(function() {
+                // Karakter gepeng tepat di bawah logo!
+                if (cartoon) {
+                    cartoon.classList.remove('walking');
+                    cartoon.classList.add('squashed');
+                }
+                if (stageRoot) stageRoot.classList.add('shaking');
+                if (heroLogo) heroLogo.classList.add('impacted');
+                if (flash) flash.classList.add('flash-now');
+                if (shockwave) shockwave.classList.add('active');
+                if (stars) stars.classList.add('active');
+                if (thoughtParticles) thoughtParticles.style.opacity = '0';
+            }, 3350);
+
+            // 3.75s: TAHAP 1 (FOTO 1)
+            // Karakter gepeng larut/menghilang, logo di tengah, teks UangKos & tagline muncul
+            setTimeout(function() {
+                if (cartoon) cartoon.classList.add('dissolve');
+                if (charShadow) charShadow.style.opacity = '0';
+                if (heroText) heroText.classList.add('show-photo1');
+            }, 3750);
+
+            // 5.4s: TAHAP 2 (REVISI USER)
+            // Teks memudar, logo MEMBESAR SAMBIL GOYANG-GOYANG & TRANSPARAN BERKURANG (fade out)
+            setTimeout(function() {
+                if (heroText) {
+                    heroText.classList.remove('show-photo1');
+                    heroText.classList.add('hide-photo1');
+                }
+                if (heroLogo) {
+                    heroLogo.classList.remove('impacted');
+                    heroLogo.classList.add('wobble-grow-fade');
+                }
+            }, 5400);
+
+            // 6.35s: Selesai, splash overlay memudar lembut keluar
+            setTimeout(function() {
+                splash.classList.add('splash-done');
+                splash.addEventListener('transitionend', function() {
+                    splash.remove();
+                }, { once: true });
+            }, 6350);
+
+            // Fallback safety (7.5s)
+            setTimeout(function() {
+                if (splash && !splash.classList.contains('splash-done')) {
+                    splash.classList.add('splash-done');
+                    setTimeout(function() { splash.remove(); }, 300);
+                }
+            }, 7500);
+        })();
+    </script>
+
+
+
+
 </body>
 </html>
