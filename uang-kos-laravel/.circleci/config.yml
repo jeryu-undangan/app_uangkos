@@ -1,13 +1,7 @@
-name: Laravel CI
-
-on:
-  push:
-    branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
+version: 2.1
 
 jobs:
-  laravel-test:
+  laravel-test-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,8 +11,16 @@ jobs:
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
-        php-version: '8.2' # Sesuaikan dengan versi PHP Laravel Anda
+        php-version: '8.2'
         extensions: mbstring, dom, fileinfo, mysql
+
+    # 1. Rencana Penyebaran (Deploy Marker - Plan)
+    - name: Plan a deploy
+      run: |
+        circleci run release plan \
+          --environment-name="uangku" \
+          --component-name="appp" \
+          --target-version="1.0.0"
 
     - name: Copy Environment File
       run: cp .env.example .env
@@ -34,3 +36,17 @@ jobs:
       env:
         DB_CONNECTION: sqlite
         DB_DATABASE: ':memory:'
+
+    # (Opsional) Tambahkan langkah proses deploy aplikasi Laravel Anda di sini
+    # Contoh: - name: Deploy to Server
+    #   run: ...
+
+    # 2. Update Status Penyebaran Menjadi BERHASIL
+    - name: Update a deploy to SUCCESS
+      command: circleci run release update --status=SUCCESS
+      when: on_success
+
+    # 3. Update Status Penyebaran Menjadi GAGAL (Jika ada proses yang error/gagal)
+    - name: Update planned deploy to FAILED
+      command: circleci run release update --status=FAILED
+      when: on_fail
